@@ -1,0 +1,16 @@
+{
+  "first_name": {
+    "type": "string",
+    "primary": "true"
+  },
+  "last_name": {
+    "type": "string"
+  },
+  "age": {
+    "type": "integer"
+  },
+  "roll_number": {
+    "type": "integer",
+    "primary": "true"
+  }
+}
