@@ -1,11 +1,11 @@
 package src
 
 import (
-	"fmt"
-	p "raw/src/parser"
+	"raw/src/api"
+	"raw/src/app"
 )
 
-func Tester() {
+func Tester(constants app.Constants) {
 	userSchema := make(map[string]map[string]string)
 	firstNameSchema := make(map[string]string)
 	firstNameSchema["type"] = "string"
@@ -25,10 +25,20 @@ func Tester() {
 	userSchema["age"] = ageSchema
 	userSchema["roll_number"] = rollNumberSchema
 
-	parseError, parseSuccess := p.Parse(userSchema)
-	if !parseSuccess {
-		fmt.Println(parseError.Message)
-	} else {
-		fmt.Println("Schema parse success")
+	model := api.Model{
+		Name:   "User",
+		Schema: userSchema,
 	}
+
+	model = model.Define()
+	createSchema := api.Create{
+		Values: map[string]any{
+			"first_name":  "suhail",
+			"second_name": "gupta",
+			"roll_number": 44,
+		},
+	}
+
+	model.Create(createSchema)
+
 }

@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"raw/src/core"
 	gs "raw/src/global"
 	util "raw/src/utilities"
 	"strings"
@@ -13,8 +14,8 @@ type ParseComputation struct {
 
 func allowedTypes() []string {
 	types := make([]string, 0)
-	types = append(types, "string")
-	types = append(types, "integer")
+	types = append(types, String)
+	types = append(types, Integer)
 	return types
 }
 
@@ -75,6 +76,19 @@ func hasPrimaryKey(attributeSchema map[string]string) bool {
 	}
 
 	return false
+}
+
+// GetDefaults This function return the default values to be put
+// in case of empty values specified with the schema
+func GetDefaults(t string) string {
+	switch t {
+	case String:
+		return core.EmptyString
+	case Integer:
+		return core.EmptyNone
+	default:
+		return core.EmptyNone
+	}
 }
 
 func Parse(schema map[string]map[string]string) (gs.Error, bool) {

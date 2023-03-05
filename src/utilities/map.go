@@ -1,7 +1,7 @@
 package utilities
 
-func GetAllKeys(m map[string]string) []string {
-	keys := make([]string, len(m))
+func GetAllKeys[K comparable, V any](m map[K]V) []K {
+	keys := make([]K, len(m))
 	i := 0
 	for k := range m {
 		keys[i] = k
