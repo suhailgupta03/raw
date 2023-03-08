@@ -61,6 +61,7 @@ func (m Model) MapParams(c *Create) structs.CreateDataMap {
 			mappedParams[schemaKeys[i]] = defaultValue
 		}
 	}
+
 	// Once the map is prepared, this can now be used to
 	// write to the database
 	return mappedParams

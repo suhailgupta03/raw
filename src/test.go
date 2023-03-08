@@ -35,8 +35,8 @@ func Tester(constants app.Constants) {
 	createdRecord, cErr := model.Create(api.Create{
 		Values: map[string]any{
 			"first_name":  "suhail",
-			"second_name": "gupta",
-			"roll_number": 44,
+			"second_name": "gupta.",
+			"roll_number": 99,
 		},
 	})
 

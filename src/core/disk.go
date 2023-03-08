@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"os"
 	"regexp"
 )
@@ -9,6 +10,7 @@ type Disk interface {
 	CreateDirectory(folderName string) (bool, error)
 	CreateDirectoryChain(chainPath string) (bool, error)
 	Write(fileName string, data []byte) (bool, error)
+	Exists(fileName string) bool
 }
 
 type DiskConfiguration struct {
@@ -44,6 +46,17 @@ func (dc *DiskConfiguration) CreateDirectoryChain(chainPath string) (bool, error
 func (dc *DiskConfiguration) Write(fileName string, b []byte) error {
 	err := os.WriteFile(fileName, b, DefaultFilePermission)
 	return err
+}
+
+func (dc *DiskConfiguration) Exists(fileName string) bool {
+	_, err := os.Stat(fileName)
+	if err == nil {
+		return true
+	} else if errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+
+	return false
 }
 
 // PathJoiner This path joins the directory names with the os specific

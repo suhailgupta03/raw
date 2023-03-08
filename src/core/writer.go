@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"raw/src/parser"
 	"raw/src/structs"
 	"raw/src/utilities"
@@ -27,14 +28,16 @@ func InitDocument(root string) *Document {
 
 func extractPKWithCorrectType(pkValue interface{}) string {
 	pkType := utilities.TypeOf(pkValue)
+	// Reference: https://pkg.go.dev/encoding/json#Unmarshal
 	switch pkType {
 	case "string":
 		return pkValue.(string)
 	case "int":
 		return strconv.Itoa(pkValue.(int))
+	case "float64":
+		return strconv.FormatFloat(pkValue.(float64), 'E', -1, 64)
 	default:
-		//TODO: Handle the default case
-		return ""
+		panic(PrimaryKeyTypeExtractionError)
 	}
 }
 func (d *Document) Write(schemaName string, schema structs.Schema, dataMap *structs.CreateDataMap) error {
@@ -70,6 +73,10 @@ func (d *Document) Write(schemaName string, schema structs.Schema, dataMap *stru
 	primaryKeyHash := dbUtil.GeneratePrimaryKeyHash(pkValue)
 	dataBytes := []byte(utilities.Stringify(*dataMap))
 	recordPath := PathJoiner(false, directory, primaryKeyHash+".json")
+	if disk.Exists(recordPath) {
+		// Cannot create a new record with the duplicate primary key
+		return errors.New(PrimaryKeyConstraintViolated + " (" + pkName + ")")
+	}
 	writeErr := disk.Write(recordPath, dataBytes)
 	if writeErr != nil {
 		// Failed to create the record

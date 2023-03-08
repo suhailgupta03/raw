@@ -1,0 +1,3 @@
+# test variables
+# note: all test variables must end with _test
+db_root_test = "/Users/suhailgupta/raw/raw_test_db"
