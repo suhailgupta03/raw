@@ -3,14 +3,18 @@ package api
 import (
 	"raw/src/core"
 	"raw/src/parser"
+	"raw/src/structs"
 	"raw/src/utilities"
 )
 
-type Schema map[string]map[string]string
+type Raw struct {
+	Root string `json:"root"`
+}
 
 type Model struct {
-	Name   string `json:"name"`
-	Schema Schema `json:"schema"`
+	Name   string         `json:"name"`
+	Schema structs.Schema `json:"schema"`
+	root   string         `json:"root"`
 }
 
 type ModelBaseMethods interface {
@@ -20,20 +24,23 @@ type ModelBaseMethods interface {
 type ExtendedModelMethods interface {
 	ModelBaseMethods
 	MapParams(schemaKeys []string, queryKeys []string)
-	ValidateQueryParameters()
 }
 
-func (m Model) Create(c Create) {
+func (m Model) Create(c Create) (structs.CreateDataMap, error) {
 	if !utilities.IsEmptyString(m.Name) && !utilities.IsNil(m.Schema) {
 		dataMap := m.MapParams(&c)
-		document := core.Document{DataMap: dataMap}
-		document.Write()
+		document := core.InitDocument(m.root)
+		writeErr := document.Write(m.Name, m.Schema, &dataMap)
+		if writeErr != nil {
+			return nil, writeErr
+		}
+		return dataMap, nil
 	} else {
 		panic(SchemaNotInitialized)
 	}
 }
 
-func (m Model) MapParams(c *Create) core.CreateDataMap {
+func (m Model) MapParams(c *Create) structs.CreateDataMap {
 	// Get all the keys defined in the schema
 	schemaKeys := utilities.GetAllKeys(m.Schema)
 	// Create a map that has keys derived from the above slice
@@ -59,13 +66,7 @@ func (m Model) MapParams(c *Create) core.CreateDataMap {
 	return mappedParams
 }
 
-// ValidateQueryParameters Verify if the parameters defined in the schema
-// match those of the parameters passed in the database function
-func (m Model) ValidateQueryParameters() {
-
-}
-
-func (m Model) Define() Model {
+func (r *Raw) DefineModel(m Model) Model {
 	// Verify if the schema passed is correct
 	pErr, pOK := parser.Parse(m.Schema)
 	if !pOK {
@@ -73,5 +74,6 @@ func (m Model) Define() Model {
 		panic(pErr.Message)
 	}
 
+	m.root = r.Root
 	return m
 }

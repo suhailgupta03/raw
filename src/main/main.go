@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	t "raw/src"
 	"raw/src/app"
 	"raw/src/toml"
@@ -24,4 +25,5 @@ func main() {
 
 func test() {
 	t.Tester(appConstants)
+	fmt.Println()
 }

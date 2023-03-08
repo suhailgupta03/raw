@@ -1,6 +1,7 @@
 package core
 
 const (
-	EmptyString = ""
-	EmptyNone   = "none"
+	// Disk Defaults
+	DefaultDirectoryPermission = 0777
+	DefaultFilePermission      = 0777
 )

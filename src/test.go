@@ -1,6 +1,7 @@
 package src
 
 import (
+	"fmt"
 	"raw/src/api"
 	"raw/src/app"
 )
@@ -25,20 +26,23 @@ func Tester(constants app.Constants) {
 	userSchema["age"] = ageSchema
 	userSchema["roll_number"] = rollNumberSchema
 
-	model := api.Model{
+	raw := api.Raw{Root: constants.DatabaseRoot}
+	model := raw.DefineModel(api.Model{
 		Name:   "User",
 		Schema: userSchema,
-	}
+	})
 
-	model = model.Define()
-	createSchema := api.Create{
+	createdRecord, cErr := model.Create(api.Create{
 		Values: map[string]any{
 			"first_name":  "suhail",
 			"second_name": "gupta",
 			"roll_number": 44,
 		},
+	})
+
+	if cErr != nil {
+		fmt.Println(cErr)
+	} else {
+		fmt.Println("Record creation success!", createdRecord)
 	}
-
-	model.Create(createSchema)
-
 }

@@ -1,8 +1,8 @@
 package parser
 
 import (
-	"raw/src/core"
 	gs "raw/src/global"
+	"raw/src/structs"
 	util "raw/src/utilities"
 	"strings"
 )
@@ -83,15 +83,31 @@ func hasPrimaryKey(attributeSchema map[string]string) bool {
 func GetDefaults(t string) string {
 	switch t {
 	case String:
-		return core.EmptyString
+		return EmptyString
 	case Integer:
-		return core.EmptyNone
+		return EmptyNone
 	default:
-		return core.EmptyNone
+		return EmptyNone
 	}
 }
 
-func Parse(schema map[string]map[string]string) (gs.Error, bool) {
+// ExtractPrimaryKey Extracts the primary key from the schema. Returns an empty
+// string and false if primary key is not found
+func ExtractPrimaryKey(schema structs.Schema) (string, bool) {
+	pKey := ""
+	found := false
+	for attr, attributeSchema := range schema {
+		hPK := hasPrimaryKey(attributeSchema)
+		if hPK {
+			pKey = attr
+			found = true
+			break
+		}
+	}
+	return pKey, found
+}
+
+func Parse(schema structs.Schema) (gs.Error, bool) {
 	error := gs.Error{Message: ""}
 	success := true
 	computation := ParseComputation{
