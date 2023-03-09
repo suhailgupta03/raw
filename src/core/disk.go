@@ -44,7 +44,7 @@ func (dc *DiskConfiguration) CreateDirectoryChain(chainPath string) (bool, error
 	return true, nil
 }
 
-// Global lock to ensure that only write operation runs at a time
+// Global lock to ensure that only one write operation runs at a time
 var diskWriteLock sync.Mutex
 
 // This method provides isolation to all the callers. It uses RWMutex
