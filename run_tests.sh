@@ -1,3 +1,3 @@
-rm -rf raw_test_db
+rm -rf /Users/suhailgupta/temp_db
 cd src/tests
 go test -v
