@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"os"
+	"raw/src/compression"
 	"regexp"
 	"sync"
 )
@@ -10,11 +11,16 @@ import (
 type Disk interface {
 	CreateDirectory(folderName string) (bool, error)
 	CreateDirectoryChain(chainPath string) (bool, error)
-	Write(fileName string, data []byte) (bool, error)
+	Write(fileName string, data []byte) error
 	Exists(fileName string) bool
 }
 
+type File interface {
+	GetFileExtension() string
+}
+
 type DiskConfiguration struct {
+	compression string
 }
 
 func InitDiskConfiguration(root string) *DiskConfiguration {
@@ -23,7 +29,8 @@ func InitDiskConfiguration(root string) *DiskConfiguration {
 		// Creation of the root directory is a must before proceeding
 		panic(err)
 	}
-	return &DiskConfiguration{}
+	// Currently only gzip compression available
+	return &DiskConfiguration{compression: GzipCompression}
 }
 
 func (dc *DiskConfiguration) CreateDirectory(folderName string) (bool, error) {
@@ -44,6 +51,15 @@ func (dc *DiskConfiguration) CreateDirectoryChain(chainPath string) (bool, error
 	return true, nil
 }
 
+func (dc *DiskConfiguration) GetFileExtension() string {
+	switch dc.compression {
+	case GzipCompression:
+		return ".gz"
+	default:
+		return ".json"
+	}
+}
+
 // Global lock to ensure that only one write operation runs at a time
 var diskWriteLock sync.Mutex
 
@@ -55,6 +71,11 @@ func (dc *DiskConfiguration) Write(fileName string, b []byte) error {
 
 	if dc.Exists(fileName) {
 		return errors.New(RecordAlreadyExists)
+	}
+
+	if dc.compression == GzipCompression {
+		gzip := new(compression.Gzip)
+		b, _ = gzip.Compress(b)
 	}
 	err := os.WriteFile(fileName, b, DefaultFilePermission)
 	return err

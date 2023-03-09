@@ -4,6 +4,7 @@ const (
 	// Disk Defaults
 	DefaultDirectoryPermission = 0777
 	DefaultFilePermission      = 0777
+	GzipCompression            = "gzip"
 
 	// Disk Errors
 	RecordAlreadyExists = "record already exists"

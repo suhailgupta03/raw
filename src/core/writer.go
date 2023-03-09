@@ -72,7 +72,7 @@ func (d *Document) Write(schemaName string, schema structs.Schema, dataMap *stru
 	}
 	primaryKeyHash := dbUtil.GeneratePrimaryKeyHash(pkValue)
 	dataBytes := []byte(utilities.Stringify(*dataMap))
-	recordPath := PathJoiner(false, directory, primaryKeyHash+".json")
+	recordPath := PathJoiner(false, directory, primaryKeyHash+disk.GetFileExtension())
 	writeErr := disk.Write(recordPath, dataBytes)
 	if writeErr != nil {
 		if writeErr.Error() == RecordAlreadyExists {
