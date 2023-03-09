@@ -8,29 +8,41 @@ import (
 	"raw/src/parser"
 	"raw/src/structs"
 	"runtime"
+	"sync"
 	"testing"
 )
 
-type TestData struct {
-	Schema structs.Schema         `json:"schema"`
-	Name   string                 `json:"name"`
-	Data   map[string]interface{} `json:"data"`
+type SingleRecord map[string]interface{}
+type MultipleRecords []SingleRecord
+
+type Base struct {
+	Schema structs.Schema `json:"schema"`
+	Name   string         `json:"name"`
+}
+
+type TestDataWithSingleRecord struct {
+	Base
+	Data SingleRecord `json:"data"`
+}
+
+type TestDataWithMultipleRecords struct {
+	Base
+	Data MultipleRecords `json:"data"`
 }
 
 var (
 	testConfig = InitTestConfig()
 )
 
-func getDataForWriteTest(t *testing.T) TestData {
+func getDataForWriteTest(t *testing.T, fileData interface{}) {
 	_, filename, _, _ := runtime.Caller(0)
 	data := GetTestFileData(t, filename)
-	testData := TestData{}
-	json.Unmarshal(data, &testData)
-	return testData
+	json.Unmarshal(data, &fileData)
 }
 
 func TestCreateRecord(t *testing.T) {
-	testRecord := getDataForWriteTest(t)
+	testRecord := &TestDataWithSingleRecord{}
+	getDataForWriteTest(t, testRecord)
 	parseError, parseSuccess := parser.Parse(testRecord.Schema)
 	assert.True(t, parseSuccess, "Parse function should succeed")
 	assert.Equal(t, "", parseError.Message)
@@ -50,7 +62,8 @@ func TestCreateRecord(t *testing.T) {
 }
 
 func TestCreateRecordWithoutPrimaryKey(t *testing.T) {
-	testRecord := getDataForWriteTest(t)
+	testRecord := &TestDataWithSingleRecord{}
+	getDataForWriteTest(t, testRecord)
 	parseError, parseSuccess := parser.Parse(testRecord.Schema)
 	assert.True(t, parseSuccess, "Parse function should succeed")
 	assert.Equal(t, "", parseError.Message)
@@ -70,7 +83,8 @@ func TestCreateRecordWithoutPrimaryKey(t *testing.T) {
 }
 
 func TestCreateRecordWithDuplicatePrimaryKey(t *testing.T) {
-	testRecord := getDataForWriteTest(t)
+	testRecord := &TestDataWithSingleRecord{}
+	getDataForWriteTest(t, &testRecord)
 	parseError, parseSuccess := parser.Parse(testRecord.Schema)
 	assert.True(t, parseSuccess, "Parse function should succeed")
 	assert.Equal(t, "", parseError.Message)
@@ -95,4 +109,66 @@ func TestCreateRecordWithDuplicatePrimaryKey(t *testing.T) {
 	assert.True(t, drErr != nil, "Record must not be created")
 	assert.Contains(t, drErr.Error(), core.PrimaryKeyConstraintViolated)
 	assert.Nil(t, duplicateRecord, "Duplicate record must be nil")
+}
+
+// This test case tests the concurrency of the write method by
+// making concurrent calls to the write method. Different calls
+// competing to write to the disk can lead to scenario where
+// previous record gets overwritten by the new record. This is what
+// this test case tests.
+func TestCreateRecordWithConcurrentWrites(t *testing.T) {
+	testRecord := &TestDataWithMultipleRecords{}
+	getDataForWriteTest(t, testRecord)
+	const oneLakh = 100000
+	// Create a data set of 1 lakh records
+	for i := len(testRecord.Data) + 1; i < oneLakh+1; i++ {
+		singleRecord := make(SingleRecord)
+		singleRecord["name"] = testRecord.Data[0]["name"]
+		singleRecord["country_of_origin"] = testRecord.Data[0]["country_of_origin"]
+		singleRecord["quantity"] = testRecord.Data[0]["quantity"]
+		singleRecord["batch_id"] = i
+		testRecord.Data = append(testRecord.Data, singleRecord)
+	}
+
+	raw := api.Raw{Root: testConfig.DatabaseRoot}
+	model := raw.DefineModel(api.Model{
+		Name:   testRecord.Name,
+		Schema: testRecord.Schema,
+	})
+
+	totalRecordsCreated := 0
+	totalErrorsRecorded := 0
+
+	var wg sync.WaitGroup
+	var m sync.Mutex
+
+	f := func() {
+		defer wg.Done()
+		for i := 0; i < oneLakh; i++ {
+			_, cErr := model.Create(api.Create{
+				Values: testRecord.Data[i],
+			})
+
+			if cErr == nil {
+				m.Lock()
+				totalRecordsCreated += 1
+				m.Unlock()
+			} else {
+				m.Lock()
+				totalErrorsRecorded += 1
+				m.Unlock()
+			}
+		}
+
+	}
+
+	wg.Add(1)
+	go f()
+	wg.Add(1)
+	go f()
+	wg.Wait()
+
+	assert.Equal(t, oneLakh, totalRecordsCreated, "Should be able to handle concurrent writes")
+	assert.Equal(t, oneLakh, totalErrorsRecorded, "Thread safe write create function must not truncate an existing record")
+
 }

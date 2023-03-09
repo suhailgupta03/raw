@@ -73,12 +73,11 @@ func (d *Document) Write(schemaName string, schema structs.Schema, dataMap *stru
 	primaryKeyHash := dbUtil.GeneratePrimaryKeyHash(pkValue)
 	dataBytes := []byte(utilities.Stringify(*dataMap))
 	recordPath := PathJoiner(false, directory, primaryKeyHash+".json")
-	if disk.Exists(recordPath) {
-		// Cannot create a new record with the duplicate primary key
-		return errors.New(PrimaryKeyConstraintViolated + " (" + pkName + ")")
-	}
 	writeErr := disk.Write(recordPath, dataBytes)
 	if writeErr != nil {
+		if writeErr.Error() == RecordAlreadyExists {
+			return errors.New(PrimaryKeyConstraintViolated + " (" + pkName + ")")
+		}
 		// Failed to create the record
 		return writeErr
 	}

@@ -1,0 +1,26 @@
+{
+  "schema": {
+    "name": {
+      "type": "string"
+    },
+    "country_of_origin": {
+      "type": "string"
+    },
+    "quantity": {
+      "type": "integer"
+    },
+    "batch_id": {
+      "type": "integer",
+      "primary": "true"
+    }
+  },
+  "name": "screens",
+  "data": [
+    {
+      "name": "BenQ HD Monitor",
+      "country_of_origin": "India",
+      "quantity": 500,
+      "batch_id": 1
+    }
+  ]
+}
