@@ -2,6 +2,7 @@ package app
 
 import (
 	"os"
+	"raw/src/core"
 	"raw/src/toml"
 )
 
@@ -11,9 +12,14 @@ type Constants struct {
 }
 
 func InitConstants(config toml.RawConfig) Constants {
+	homeDirName, hErr := os.UserHomeDir()
+	if hErr != nil {
+		panic(hErr.Error())
+	}
+
 	constants := Constants{
 		AppName:      config["app_name"].(string),
-		DatabaseRoot: config["db_root"].(string),
+		DatabaseRoot: core.PathJoiner(false, homeDirName, config["db_root"].(string)),
 	}
 	return constants
 }

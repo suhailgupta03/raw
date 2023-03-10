@@ -9,25 +9,15 @@ import (
 	"testing"
 )
 
-type TestConfig struct {
-	DatabaseRoot string `json:"db_root"`
-}
-
-func prepareConfKey(key string) string {
-	return key + "_test"
-}
-func InitTestConfig() TestConfig {
+func InitTestConfig() app.Constants {
 
 	conf, confErr := app.InitConfig()
 	if confErr != nil {
 		panic(confErr)
 	}
 
-	testConfig := TestConfig{
-		DatabaseRoot: conf[prepareConfKey("db_root")].(string),
-	}
+	return app.InitConstants(conf)
 
-	return testConfig
 }
 func GetTestFileData(t *testing.T, filename string) []byte {
 	reg := regexp.MustCompile(".go$")

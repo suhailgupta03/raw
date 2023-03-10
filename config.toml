@@ -1,4 +1,4 @@
 
 app_name = "raw"
 # database
-db_root = "/Users/suhailgupta/raw/raw_db"
+db_root = "raw_db"
