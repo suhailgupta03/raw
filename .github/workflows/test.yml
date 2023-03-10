@@ -9,10 +9,7 @@ jobs:
         go: ['1.19','1.20']
     
     runs-on: ubuntu-20.04
-    defaults:
-      run:
-        working-directory: rawdb
-      
+    
     name: Go ${{ matrix.go }} Tests
     steps:
     - uses: actions/checkout@v3
