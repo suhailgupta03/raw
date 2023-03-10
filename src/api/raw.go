@@ -26,18 +26,29 @@ type ExtendedModelMethods interface {
 	MapParams(schemaKeys []string, queryKeys []string)
 }
 
-func (m Model) Create(c Create) (structs.CreateDataMap, error) {
-	if !utilities.IsEmptyString(m.Name) && !utilities.IsNil(m.Schema) {
-		dataMap := m.MapParams(&c)
-		document := core.InitDocument(m.root)
-		writeErr := document.Write(m.Name, m.Schema, &dataMap)
-		if writeErr != nil {
-			return nil, writeErr
+func (m Model) Create(c Create) chan CreateResponse {
+	responseChannel := make(chan CreateResponse)
+	go func() {
+		response := new(CreateResponse)
+		if !utilities.IsEmptyString(m.Name) && !utilities.IsNil(m.Schema) {
+			dataMap := m.MapParams(&c)
+			document := core.InitDocument(m.root)
+			writeErr := document.Write(m.Name, m.Schema, &dataMap)
+			if writeErr != nil {
+				response.Err = writeErr
+				response.Data = nil
+				responseChannel <- *response
+			} else {
+				response.Data = dataMap
+				response.Err = nil
+				responseChannel <- *response
+			}
+		} else {
+			panic(SchemaNotInitialized)
 		}
-		return dataMap, nil
-	} else {
-		panic(SchemaNotInitialized)
-	}
+	}()
+
+	return responseChannel
 }
 
 func (m Model) MapParams(c *Create) structs.CreateDataMap {
