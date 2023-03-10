@@ -36,6 +36,10 @@ func extractPKWithCorrectType(pkValue interface{}) string {
 		return strconv.Itoa(pkValue.(int))
 	case "float64":
 		return strconv.FormatFloat(pkValue.(float64), 'E', -1, 64)
+	case "uint32":
+		return strconv.FormatUint(uint64(pkValue.(uint32)), 10)
+	case "uint64":
+		return strconv.FormatUint(uint64(pkValue.(uint64)), 10)
 	default:
 		panic(PrimaryKeyTypeExtractionError)
 	}

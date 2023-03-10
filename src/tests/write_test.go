@@ -9,6 +9,7 @@ import (
 	"raw/src/structs"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"testing"
 )
 
@@ -119,9 +120,9 @@ func TestCreateRecordWithDuplicatePrimaryKey(t *testing.T) {
 func TestCreateRecordWithConcurrentWrites(t *testing.T) {
 	testRecord := &TestDataWithMultipleRecords{}
 	getDataForWriteTest(t, testRecord)
-	const oneLakh = 100000
+	const oneLakh = uint32(100000)
 	// Create a data set of 1 lakh records
-	for i := len(testRecord.Data) + 1; i < oneLakh+1; i++ {
+	for i := uint32(len(testRecord.Data)) + 1; i < oneLakh+1; i++ {
 		singleRecord := make(SingleRecord)
 		singleRecord["name"] = testRecord.Data[0]["name"]
 		singleRecord["country_of_origin"] = testRecord.Data[0]["country_of_origin"]
@@ -136,27 +137,22 @@ func TestCreateRecordWithConcurrentWrites(t *testing.T) {
 		Schema: testRecord.Schema,
 	})
 
-	totalRecordsCreated := 0
-	totalErrorsRecorded := 0
+	var totalRecordsCreated uint32
+	var totalErrorsRecorded uint32
 
 	var wg sync.WaitGroup
-	var m sync.Mutex
 
 	f := func() {
 		defer wg.Done()
-		for i := 0; i < oneLakh; i++ {
+		for i := uint32(0); i < oneLakh; i++ {
 			_, cErr := model.Create(api.Create{
 				Values: testRecord.Data[i],
 			})
 
 			if cErr == nil {
-				m.Lock()
-				totalRecordsCreated += 1
-				m.Unlock()
+				atomic.AddUint32(&totalRecordsCreated, 1)
 			} else {
-				m.Lock()
-				totalErrorsRecorded += 1
-				m.Unlock()
+				atomic.AddUint32(&totalErrorsRecorded, 1)
 			}
 		}
 
